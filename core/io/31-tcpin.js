@@ -68,13 +68,13 @@ module.exports = function(RED) {
             var end = false;
             var setupTcpClient = function() {
                 node.log(RED._("tcpin.status.connecting",{host:node.host,port:node.port}));
-                node.status({fill:"grey",shape:"dot",text:"common.status.connecting"});
+                node.status({fill:"grey",shape:"dot",text:"common.status.connecting",host:node.host,port:node.port});
                 var id = (1+Math.random()*4294967295).toString(16);
                 client = net.connect(node.port, node.host, function() {
                     buffer = (node.datatype == 'buffer') ? Buffer.alloc(0) : "";
                     node.connected = true;
                     node.log(RED._("tcpin.status.connected",{host:node.host,port:node.port}));
-                    node.status({fill:"green",shape:"dot",text:"common.status.connected"});
+                    node.status({fill:"green",shape:"dot",text:"common.status.connected",host:node.host,port:node.port});
                 });
                 client.setKeepAlive(true,120000);
                 connectionPool[id] = client;
@@ -121,7 +121,7 @@ module.exports = function(RED) {
                 client.on('close', function() {
                     delete connectionPool[id];
                     node.connected = false;
-                    node.status({fill:"red",shape:"ring",text:"common.status.disconnected"});
+                    node.status({fill:"red",shape:"ring",text:"common.status.disconnected",host:node.host,port:node.port});
                     if (!node.closing) {
                         if (end) { // if we were asked to close then try to reconnect once very quick.
                             end = false;
@@ -277,22 +277,22 @@ module.exports = function(RED) {
 
             var setupTcpClient = function() {
                 node.log(RED._("tcpin.status.connecting",{host:node.host,port:node.port}));
-                node.status({fill:"grey",shape:"dot",text:"common.status.connecting"});
+                node.status({fill:"grey",shape:"dot",text:"common.status.connecting",host:node.host,port:node.port});
                 client = net.connect(node.port, node.host, function() {
                     node.connected = true;
                     node.log(RED._("tcpin.status.connected",{host:node.host,port:node.port}));
-                    node.status({fill:"green",shape:"dot",text:"common.status.connected"});
+                    node.status({fill:"green",shape:"dot",text:"common.status.connected",host:node.host,port:node.port});
                 });
                 client.setKeepAlive(true,120000);
                 client.on('error', function (err) {
                     node.log(RED._("tcpin.errors.error",{error:err.toString()}));
                 });
                 client.on('end', function (err) {
-                    node.status({});
+                    node.status({host:node.host,port:node.port});
                     node.connected = false;
                 });
                 client.on('close', function() {
-                    node.status({fill:"red",shape:"ring",text:"common.status.disconnected"});
+                    node.status({fill:"red",shape:"ring",text:"common.status.disconnected",host:node.host,port:node.port});
                     node.connected = false;
                     client.destroy();
                     if (!node.closing) {
@@ -322,7 +322,7 @@ module.exports = function(RED) {
                     }
                     if (node.doend === true) {
                         end = true;
-                        if (client) { node.status({}); client.destroy(); }
+                        if (client) { node.status({host:node.host,port:node.port}); client.destroy(); }
                     }
                 }
             });
@@ -365,14 +365,14 @@ module.exports = function(RED) {
         }
         else {
             var connectedSockets = [];
-            node.status({text:RED._("tcpin.status.connections",{count:0})});
+            node.status({text:RED._("tcpin.status.connections",{count:0}),host:node.host,port:node.port});
             var server = net.createServer(function (socket) {
                 socket.setKeepAlive(true,120000);
                 if (socketTimeout !== null) { socket.setTimeout(socketTimeout); }
                 var remoteDetails = socket.remoteAddress+":"+socket.remotePort;
                 node.log(RED._("tcpin.status.connection-from",{host:socket.remoteAddress, port:socket.remotePort}));
                 connectedSockets.push(socket);
-                node.status({text:RED._("tcpin.status.connections",{count:connectedSockets.length})});
+                node.status({text:RED._("tcpin.status.connections",{count:connectedSockets.length}),host:node.host,port:node.port});
                 socket.on('timeout', function() {
                     node.log(RED._("tcpin.errors.timeout",{port:node.port}));
                     socket.end();
@@ -380,12 +380,12 @@ module.exports = function(RED) {
                 socket.on('close',function() {
                     node.log(RED._("tcpin.status.connection-closed",{host:socket.remoteAddress, port:socket.remotePort}));
                     connectedSockets.splice(connectedSockets.indexOf(socket),1);
-                    node.status({text:RED._("tcpin.status.connections",{count:connectedSockets.length})});
+                    node.status({text:RED._("tcpin.status.connections",{count:connectedSockets.length}),host:node.host,port:node.port});
                 });
                 socket.on('error',function() {
                     node.log(RED._("tcpin.errors.socket-error",{host:socket.remoteAddress, port:socket.remotePort}));
                     connectedSockets.splice(connectedSockets.indexOf(socket),1);
-                    node.status({text:RED._("tcpin.status.connections",{count:connectedSockets.length})});
+                    node.status({text:RED._("tcpin.status.connections",{count:connectedSockets.length}),host:node.host,port:node.port});
                 });
             });
 
@@ -475,7 +475,7 @@ module.exports = function(RED) {
             // clients[id].client, clients[id].msg, clients[id].timeout
             var connection_id = host + ":" + port;
             if (connection_id !== node.last_id) {
-                node.status({});
+                node.status({host,port});
                 node.last_id = connection_id;
             }
             clients[connection_id] = clients[connection_id] || {
@@ -501,7 +501,7 @@ module.exports = function(RED) {
                     clients[connection_id].connecting = true;
                     clients[connection_id].client.connect(port, host, function() {
                         //node.log(RED._("tcpin.errors.client-connected"));
-                        node.status({fill:"green",shape:"dot",text:"common.status.connected"});
+                        node.status({fill:"green",shape:"dot",text:"common.status.connected",host,port});
                         if (clients[connection_id] && clients[connection_id].client) {
                             clients[connection_id].connected = true;
                             clients[connection_id].connecting = false;
@@ -513,7 +513,7 @@ module.exports = function(RED) {
                                 clients[connection_id].connected = clients[connection_id].connecting = false;
                                 clients[connection_id].client.end();
                                 delete clients[connection_id];
-                                node.status({});
+                                node.status({host,port});
                             }
                         }
                     });
@@ -552,7 +552,7 @@ module.exports = function(RED) {
                                                 buf.copy(msg.payload,0,0,i+1);
                                                 node.send(msg);
                                                 if (clients[connection_id].client) {
-                                                    node.status({});
+                                                    node.status({host,port});
                                                     clients[connection_id].client.destroy();
                                                     delete clients[connection_id];
                                                 }
@@ -574,7 +574,7 @@ module.exports = function(RED) {
                                         buf.copy(msg.payload,0,0,i);
                                         node.send(msg);
                                         if (clients[connection_id].client) {
-                                            node.status({});
+                                            node.status({host,port});
                                             clients[connection_id].client.destroy();
                                             delete clients[connection_id];
                                         }
@@ -593,7 +593,7 @@ module.exports = function(RED) {
                                         buf.copy(msg.payload,0,0,i);
                                         node.send(msg);
                                         if (clients[connection_id].client) {
-                                            node.status({});
+                                            node.status({host,port});
                                             clients[connection_id].client.destroy();
                                             delete clients[connection_id];
                                         }
@@ -607,7 +607,7 @@ module.exports = function(RED) {
 
                 clients[connection_id].client.on('end', function() {
                     //console.log("END");
-                    node.status({fill:"grey",shape:"ring",text:"common.status.disconnected"});
+                    node.status({fill:"grey",shape:"ring",text:"common.status.disconnected",host,port});
                     if (clients[connection_id] && clients[connection_id].client) {
                         clients[connection_id].connected = clients[connection_id].connecting = false;
                         clients[connection_id].client = null;
@@ -636,7 +636,7 @@ module.exports = function(RED) {
 
                 clients[connection_id].client.on('error', function() {
                     //console.log("ERROR");
-                    node.status({fill:"red",shape:"ring",text:"common.status.error"});
+                    node.status({fill:"red",shape:"ring",text:"common.status.error",host,port});
                     node.error(RED._("tcpin.errors.connect-fail") + " " + connection_id, msg);
                     if (clients[connection_id] && clients[connection_id].client) {
                         clients[connection_id].client.destroy();
@@ -648,14 +648,14 @@ module.exports = function(RED) {
                     //console.log("TIMEOUT");
                     if (clients[connection_id]) {
                         clients[connection_id].connected = clients[connection_id].connecting = false;
-                        node.status({fill:"grey",shape:"dot",text:"tcpin.errors.connect-timeout"});
+                        node.status({fill:"grey",shape:"dot",text:"tcpin.errors.connect-timeout",host,port});
                         //node.warn(RED._("tcpin.errors.connect-timeout"));
                         if (clients[connection_id].client) {
                             clients[connection_id].connecting = true;
                             clients[connection_id].client.connect(port, host, function() {
                                 clients[connection_id].connected = true;
                                 clients[connection_id].connecting = false;
-                                node.status({fill:"green",shape:"dot",text:"common.status.connected"});
+                                node.status({fill:"green",shape:"dot",text:"common.status.connected",host,port});
                             });
                         }
                     }
@@ -675,7 +675,7 @@ module.exports = function(RED) {
                     clients[cl].client.destroy();
                 }
             }
-            node.status({});
+            node.status({host,port});
 
             // this is probably not necessary and may be removed
             var anyConnected = false;
