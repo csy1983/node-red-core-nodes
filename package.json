@@ -52,7 +52,7 @@
     "https-proxy-agent": "2.2.1",
     "iconv-lite": "0.4.24",
     "is-utf8": "0.2.1",
-    "js-yaml": "3.13.0",
+    "js-yaml": "3.13.1",
     "mqtt": "2.18.8",
     "multer": "1.4.1",
     "mustache": "3.0.1",
